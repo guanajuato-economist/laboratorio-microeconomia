@@ -1,1 +1,496 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador de pérdida de eficiencia por un mpuesto unitario a las ventas</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Plotly.js -->
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <!-- Inter Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    input[type=range] {
+      accent-color: #2563eb;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
 
+  <!-- Header -->
+  <header class="bg-slate-900 text-white border-b border-slate-800 py-4 px-6 shadow-md">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
+      <div>
+        <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+          Laboratorio de microeconomía
+        </h1>
+       
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="resetBtn" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg transition border border-slate-700">
+          Restablecer Valores
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- Left Controls Panel (4 Cols) -->
+    <section class="lg:col-span-4 flex flex-col gap-5">
+      
+      <!-- Tax Wedge Control Card -->
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+        <div class="flex justify-between items-center mb-3">
+          <label class="text-sm font-semibold text-slate-900 flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-indigo-600"></span> Impuesto por Unidad ($t$)
+          </label>
+          <span id="taxValDisplay" class="text-base font-bold px-2.5 py-0.5 bg-indigo-50 text-indigo-700 rounded-md border border-indigo-100">$2.00</span>
+        </div>
+        <input type="range" id="taxSlider" min="0" max="8" step="0.25" value="2.0" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+        <div class="flex justify-between text-[11px] text-slate-400 font-medium mt-1">
+          <span>$0.00 (Sin impuesto)</span>
+          <span>$8.00 (Prohibitivo)</span>
+        </div>
+      </div>
+
+      <!-- Curves Control Card -->
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-4">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2">Parámetros de Oferta y Demanda</h2>
+
+        <!-- Demand Settings -->
+        <div class="space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold text-blue-600 flex items-center gap-1">
+              Curva de Demanda: $P = a - bQ$
+            </span>
+          </div>
+          
+          <div>
+            <div class="flex justify-between text-xs text-slate-600 mb-1">
+              <span>Ordenada al origen ($a$) - Disposición máxima a pagar</span>
+              <span id="aValDisplay" class="font-mono font-semibold">10.0</span>
+            </div>
+            <input type="range" id="aSlider" min="6" max="15" step="0.5" value="10.0" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs text-slate-600 mb-1">
+              <span>Pendiente ($b$) - Elasticidad/Sensibilidad</span>
+              <span id="bValDisplay" class="font-mono font-semibold">1.0</span>
+            </div>
+            <input type="range" id="bSlider" min="0.2" max="2.5" step="0.1" value="1.0" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+          </div>
+        </div>
+
+        <div class="border-t border-slate-100 my-1"></div>
+
+        <!-- Supply Settings -->
+        <div class="space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold text-red-500 flex items-center gap-1">
+              Curva de Oferta: $P = c + dQ$
+            </span>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs text-slate-600 mb-1">
+              <span>Ordenada al origen ($c$) - Costo marginal inicial</span>
+              <span id="cValDisplay" class="font-mono font-semibold">2.0</span>
+            </div>
+            <input type="range" id="cSlider" min="0" max="6" step="0.5" value="2.0" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs text-slate-600 mb-1">
+              <span>Pendiente ($d$) - Sensibilidad del productor</span>
+              <span id="dValDisplay" class="font-mono font-semibold">1.0</span>
+            </div>
+            <input type="range" id="dSlider" min="0.2" max="2.5" step="0.1" value="1.0" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+          </div>
+        </div>
+      </div>
+
+      <!-- Display Options Card -->
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2 mb-3">Opciones de Sombreado</h2>
+        <div class="space-y-2">
+          <label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700">
+            <input type="checkbox" id="showRevToggle" checked class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
+            <span class="w-2.5 h-2.5 rounded-sm bg-emerald-400/60 border border-emerald-500"></span> Recaudación Fiscal (Ingreso del Estado)
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700">
+            <input type="checkbox" id="showDwlToggle" checked class="w-4 h-4 text-rose-600 rounded border-slate-300 focus:ring-rose-500">
+            <span class="w-2.5 h-2.5 rounded-sm bg-rose-400/60 border border-rose-500"></span> Pérdida Irrecuperable de Eficiencia (PIE / DWL)
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700">
+            <input type="checkbox" id="showSurplusToggle" class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
+            <span class="w-2.5 h-2.5 rounded-sm bg-blue-300/50 border border-blue-400"></span> Excedente del Consumidor y Productor con Impuesto
+          </label>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Right Content Area (8 Cols) -->
+    <section class="lg:col-span-8 flex flex-col gap-6">
+
+      <!-- Interactive Chart Area -->
+      <div class="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm relative">
+        <div id="plot" class="w-full h-[450px]"></div>
+      </div>
+
+      <!-- Key Metrics Summary Panel -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <!-- Equilibrado Inicial -->
+        <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Mercado Libre</div>
+          <div class="text-sm font-semibold text-slate-800 mt-1">
+            Q* = <span id="qStarDisplay" class="text-slate-900 font-bold">4.00</span>
+          </div>
+          <div class="text-xs text-slate-500">
+            P* = <span id="pStarDisplay" class="font-medium">$6.00</span>
+          </div>
+        </div>
+
+        <!-- Estado con Impuesto -->
+        <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Mercado con Impuesto</div>
+          <div class="text-sm font-semibold text-slate-800 mt-1">
+            Q<sub>t</sub> = <span id="qtDisplay" class="text-indigo-600 font-bold">3.00</span>
+          </div>
+          <div class="text-xs text-slate-500">
+            P<sub>d</sub> (Comprador) = <span id="pdDisplay" class="text-blue-600 font-medium">$7.00</span><br>
+            P<sub>s</sub> (Vendedor) = <span id="psDisplay" class="text-red-500 font-medium">$5.00</span>
+          </div>
+        </div>
+
+        <!-- Recaudación Fiscal -->
+        <div class="bg-emerald-50/50 p-3.5 rounded-xl border border-emerald-200 shadow-sm">
+          <div class="text-[11px] font-medium text-emerald-800 uppercase tracking-wide">Recaudación Fiscal</div>
+          <div class="text-lg font-bold text-emerald-700 mt-0.5" id="taxRevDisplay">$6.00</div>
+          <div class="text-[11px] text-emerald-600/90 mt-0.5">
+            Incidencia: <span id="buyerShareDisplay">50%</span> Comprador / <span id="sellerShareDisplay">50%</span> Vendedor
+          </div>
+        </div>
+
+        <!-- Pérdida Irrecuperable de Eficiencia -->
+        <div class="bg-rose-50/50 p-3.5 rounded-xl border border-rose-200 shadow-sm">
+          <div class="text-[11px] font-medium text-rose-800 uppercase tracking-wide">Pérdida Social (PIE)</div>
+          <div class="text-lg font-bold text-rose-600 mt-0.5" id="dwlDisplay">$1.00</div>
+          <div class="text-[11px] text-rose-500/90 mt-0.5">
+            Bienestar destruido
+          </div>
+        </div>
+      </div>
+
+      <!-- Explicación Económica Orientada a Estudiantes Universitaria -->
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <h3 class="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2 flex items-center gap-2">
+          <span>📚</span> Conceptos Clave de Economía Pública
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs leading-relaxed text-slate-600">
+          
+          <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
+            <strong class="text-slate-800 block mb-1">1. La Cuña Fiscal (Tax Wedge)</strong>
+            Un impuesto unitario $t$ crea un abismo vertical entre el precio que paga el consumidor ($P_d$) y el precio neto que recibe el productor ($P_s$), cumpliendo $P_d - P_s = t$. Esto contrae la cantidad intercambiada de $Q^*$ a $Q_t$.
+          </div>
+
+          <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
+            <strong class="text-slate-800 block mb-1">2. Incidencia Fiscal Real</strong>
+            La distribución real de la carga no depende de quién paga el impuesto formalmente al SAT o al gobierno, sino de la elasticidad relativa de las curvas. La parte relativamente más inelástica soporta mayor proporción de la carga.
+          </div>
+
+          <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
+            <strong class="text-slate-800 block mb-1">3. Pérdida Irrecuperable de Eficiencia (PIE)</strong>
+            Es la destrucción de excedente total que ni los agentes del mercado ni el Estado capturan. Ocurre porque se desincentivan transacciones socialmente eficientes donde la disposición a pagar superaba al costo marginal de producción.
+          </div>
+
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <script>
+    // Estado General
+    let state = {
+      tax: 2.0,
+      a: 10.0,
+      b: 1.0,
+      c: 2.0,
+      d: 1.0,
+      showRev: true,
+      showDwl: true,
+      showSurplus: false
+    };
+
+    // Elementos del DOM
+    const taxSlider = document.getElementById('taxSlider');
+    const aSlider = document.getElementById('aSlider');
+    const bSlider = document.getElementById('bSlider');
+    const cSlider = document.getElementById('cSlider');
+    const dSlider = document.getElementById('dSlider');
+
+    const taxValDisplay = document.getElementById('taxValDisplay');
+    const aValDisplay = document.getElementById('aValDisplay');
+    const bValDisplay = document.getElementById('bValDisplay');
+    const cValDisplay = document.getElementById('cValDisplay');
+    const dValDisplay = document.getElementById('dValDisplay');
+
+    const showRevToggle = document.getElementById('showRevToggle');
+    const showDwlToggle = document.getElementById('showDwlToggle');
+    const showSurplusToggle = document.getElementById('showSurplusToggle');
+
+    const qStarDisplay = document.getElementById('qStarDisplay');
+    const pStarDisplay = document.getElementById('pStarDisplay');
+    const qtDisplay = document.getElementById('qtDisplay');
+    const pdDisplay = document.getElementById('pdDisplay');
+    const psDisplay = document.getElementById('psDisplay');
+    const taxRevDisplay = document.getElementById('taxRevDisplay');
+    const dwlDisplay = document.getElementById('dwlDisplay');
+    const buyerShareDisplay = document.getElementById('buyerShareDisplay');
+    const sellerShareDisplay = document.getElementById('sellerShareDisplay');
+
+    // Escuchadores de Eventos
+    taxSlider.addEventListener('input', (e) => { state.tax = parseFloat(e.target.value); update(); });
+    aSlider.addEventListener('input', (e) => { state.a = parseFloat(e.target.value); update(); });
+    bSlider.addEventListener('input', (e) => { state.b = parseFloat(e.target.value); update(); });
+    cSlider.addEventListener('input', (e) => { state.c = parseFloat(e.target.value); update(); });
+    dSlider.addEventListener('input', (e) => { state.d = parseFloat(e.target.value); update(); });
+
+    showRevToggle.addEventListener('change', (e) => { state.showRev = e.target.checked; update(); });
+    showDwlToggle.addEventListener('change', (e) => { state.showDwl = e.target.checked; update(); });
+    showSurplusToggle.addEventListener('change', (e) => { state.showSurplus = e.target.checked; update(); });
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      state = { tax: 2.0, a: 10.0, b: 1.0, c: 2.0, d: 1.0, showRev: true, showDwl: true, showSurplus: false };
+      taxSlider.value = 2.0;
+      aSlider.value = 10.0;
+      bSlider.value = 1.0;
+      cSlider.value = 2.0;
+      dSlider.value = 1.0;
+      showRevToggle.checked = true;
+      showDwlToggle.checked = true;
+      showSurplusToggle.checked = false;
+      update();
+    });
+
+    // Función de Cálculo y Renderizado
+    function update() {
+      // Actualización de textos del panel
+      taxValDisplay.innerText = `$${state.tax.toFixed(2)}`;
+      aValDisplay.innerText = state.a.toFixed(1);
+      bValDisplay.innerText = state.b.toFixed(1);
+      cValDisplay.innerText = state.c.toFixed(1);
+      dValDisplay.innerText = state.d.toFixed(1);
+
+      // Cálculos Microeconómicos
+      // Demanda: P = a - b*Q
+      // Oferta: P = c + d*Q
+      // Equilibrio libre mercado: a - b*Q = c + d*Q => Q*(b+d) = a - c => Q* = (a - c) / (b + d)
+      const Q_star = Math.max(0, (state.a - state.c) / (state.b + state.d));
+      const P_star = state.a - state.b * Q_star;
+
+      // Equilibrio con Impuesto: P_d - P_s = t => (a - b*Qt) - (c + d*Qt) = t
+      // Qt * (b + d) = a - c - t => Qt = (a - c - t) / (b + d)
+      let Q_t = (state.a - state.c - state.tax) / (state.b + state.d);
+      if (Q_t < 0) Q_t = 0; // Si el impuesto destruye por completo el comercio del mercado
+
+      const P_d = state.a - state.b * Q_t;
+      const P_s = state.c + state.d * Q_t;
+
+      const taxRevenue = state.tax * Q_t;
+      const dwl = 0.5 * state.tax * (Q_star - Q_t);
+
+      // Carga Incidencia Fiscal (Incidencia Carga del Impuesto)
+      const buyerBurdenUnit = Math.max(0, P_d - P_star);
+      const sellerBurdenUnit = Math.max(0, P_star - P_s);
+      const totalBurdenUnit = buyerBurdenUnit + sellerBurdenUnit;
+
+      let buyerPct = 50, sellerPct = 50;
+      if (totalBurdenUnit > 0) {
+        buyerPct = Math.round((buyerBurdenUnit / totalBurdenUnit) * 100);
+        sellerPct = 100 - buyerPct;
+      }
+
+      // Actualizar UI con Métricas Clave
+      qStarDisplay.innerText = Q_star.toFixed(2);
+      pStarDisplay.innerText = `$${P_star.toFixed(2)}`;
+      qtDisplay.innerText = Q_t.toFixed(2);
+      pdDisplay.innerText = `$${P_d.toFixed(2)}`;
+      psDisplay.innerText = `$${P_s.toFixed(2)}`;
+      taxRevDisplay.innerText = `$${taxRevenue.toFixed(2)}`;
+      dwlDisplay.innerText = `$${dwl.toFixed(2)}`;
+      buyerShareDisplay.innerText = `${buyerPct}%`;
+      sellerShareDisplay.innerText = `${sellerPct}%`;
+
+      // Preparación de Gráfico con Plotly
+      const maxQ = Math.max(Q_star * 1.4, 8);
+      const qRange = [0, maxQ];
+      const dPrices = qRange.map(q => state.a - state.b * q);
+      const sPrices = qRange.map(q => state.c + state.d * q);
+
+      const traces = [];
+
+      // 1. Excedente del Consumidor y Productor (Post-Impuesto)
+      if (state.showSurplus && Q_t > 0) {
+        traces.push({
+          x: [0, Q_t, 0, 0],
+          y: [state.a, P_d, P_d, state.a],
+          fill: 'toself',
+          fillcolor: 'rgba(59, 130, 246, 0.15)',
+          line: { width: 0 },
+          name: 'Excedente del Consumidor',
+          hoverinfo: 'none'
+        });
+
+        traces.push({
+          x: [0, Q_t, 0, 0],
+          y: [state.c, P_s, P_s, state.c],
+          fill: 'toself',
+          fillcolor: 'rgba(245, 158, 11, 0.15)',
+          line: { width: 0 },
+          name: 'Excedente del Productor',
+          hoverinfo: 'none'
+        });
+      }
+
+      // 2. Área de Recaudación Fiscal (Ingreso Gubernamental)
+      if (state.showRev && Q_t > 0 && state.tax > 0) {
+        traces.push({
+          x: [0, Q_t, Q_t, 0, 0],
+          y: [P_s, P_s, P_d, P_d, P_s],
+          fill: 'toself',
+          fillcolor: 'rgba(16, 185, 129, 0.25)',
+          line: { color: '#059669', width: 1.5, dash: 'dot' },
+          name: 'Recaudación Fiscal',
+          hoverinfo: 'name'
+        });
+      }
+
+      // 3. Área de Pérdida Irrecuperable de Eficiencia (DWL)
+      if (state.showDwl && Q_t < Q_star && state.tax > 0) {
+        traces.push({
+          x: [Q_t, Q_star, Q_t, Q_t],
+          y: [P_d, P_star, P_s, P_d],
+          fill: 'toself',
+          fillcolor: 'rgba(244, 63, 94, 0.35)',
+          line: { color: '#e11d48', width: 1.5 },
+          name: 'Pérdida Irrecuperable (PIE)',
+          hoverinfo: 'name'
+        });
+      }
+
+      // 4. Curva de Demanda
+      traces.push({
+        x: qRange,
+        y: dPrices,
+        mode: 'lines',
+        name: 'Demanda',
+        line: { color: '#2563eb', width: 3 }
+      });
+
+      // 5. Curva de Oferta
+      traces.push({
+        x: qRange,
+        y: sPrices,
+        mode: 'lines',
+        name: 'Oferta',
+        line: { color: '#ef4444', width: 3 }
+      });
+
+      // 6. Punto de Equilibrio de Mercado Libre
+      traces.push({
+        x: [Q_star],
+        y: [P_star],
+        mode: 'markers+text',
+        marker: { size: 9, color: '#1e293b' },
+        text: [`Eq (${Q_star.toFixed(1)}, $${P_star.toFixed(1)})`],
+        textposition: 'top right',
+        textfont: { size: 11, color: '#334155' },
+        name: 'Equilibrio de Mercado Libre',
+        hoverinfo: 'text'
+      });
+
+      // 7. Cuña Fiscal (Línea del Impuesto y Precios)
+      if (state.tax > 0 && Q_t > 0) {
+        traces.push({
+          x: [Q_t, Q_t],
+          y: [P_s, P_d],
+          mode: 'lines+markers',
+          line: { color: '#4f46e5', width: 3.5 },
+          marker: { size: 8, color: ['#ef4444', '#2563eb'] },
+          name: 'Cuña Fiscal (Pd - Ps)',
+          hoverinfo: 'none'
+        });
+
+        // Líneas punteadas de referencia
+        traces.push({
+          x: [0, Q_t, Q_t],
+          y: [P_d, P_d, 0],
+          mode: 'lines',
+          line: { color: '#94a3b8', width: 1, dash: 'dash' },
+          showlegend: false,
+          hoverinfo: 'none'
+        });
+
+        traces.push({
+          x: [0, Q_t],
+          y: [P_s, P_s],
+          mode: 'lines',
+          line: { color: '#94a3b8', width: 1, dash: 'dash' },
+          showlegend: false,
+          hoverinfo: 'none'
+        });
+      }
+
+      const layout = {
+        title: {
+          text: `<b>Diagrama de Oferta y Demanda con Impuesto ($t = $${state.tax.toFixed(2)})</b>`,
+          font: { size: 15, family: 'Inter', color: '#0f172a' },
+          x: 0.02
+        },
+        xaxis: {
+          title: { text: 'Cantidad (Q)', font: { size: 12, family: 'Inter', color: '#475569' } },
+          range: [0, maxQ],
+          zeroline: true,
+          zerolinecolor: '#cbd5e1',
+          gridcolor: '#f1f5f9'
+        },
+        yaxis: {
+          title: { text: 'Precio (P)', font: { size: 12, family: 'Inter', color: '#475569' } },
+          range: [0, Math.max(state.a * 1.1, P_d * 1.1)],
+          zeroline: true,
+          zerolinecolor: '#cbd5e1',
+          gridcolor: '#f1f5f9'
+        },
+        margin: { t: 40, r: 20, b: 50, l: 50 },
+        legend: {
+          orientation: 'h',
+          y: -0.2,
+          x: 0,
+          font: { size: 11, family: 'Inter' }
+        },
+        hovermode: 'closest',
+        plot_bgcolor: '#ffffff',
+        paper_bgcolor: '#ffffff'
+      };
+
+      const config = { responsive: true, displayModeBar: false };
+
+      Plotly.react('plot', traces, layout, config);
+    }
+
+    // Render inicial
+    window.onload = function() {
+      update();
+    };
+  </script>
+</body>
+</html>
